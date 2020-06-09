@@ -5,18 +5,24 @@ import json
 import hashlib
 from collections import OrderedDict
 from hash_util import hash_string_256, hash_block
+# from files import saveData
+import pickle
 #globals
+
+decoder  =json.JSONDecoder(object_pairs_hook=OrderedDict)
+
+
 MiningReward = 10
 first ={
-    'previous_hash':'first',
-    'index':'0',
+    "previous_hash":"first",
+    "index":0,
     'transactions':[],
-    'proof':2608
+    "proof":2608
 }
 blockchain = [first]
 transaction = []
-sender = 'AtulPandey'
-participants ={'AtulPandey'}
+sender = "AtulPandey"
+participants ={"AtulPandey"}
 
 
 '''
@@ -48,7 +54,7 @@ def addelement(recipient , amount):
     #     'amount':amount
     # }
     # use ordered dict
-    newTx =OrderedDict([('sender',sender),('recipient',recipient),('amount',amount)])
+    newTx =OrderedDict([("sender",sender),("recipient",recipient),("amount",amount)])
 
     if verify_transaction(newTx):
         participants.add(sender)
@@ -56,6 +62,7 @@ def addelement(recipient , amount):
         transaction.append(newTx)
         print('-'*20)
         print('successfully transaction done')
+        saveData()
     else:
         print('Not enough Balance')
 
@@ -73,6 +80,7 @@ def printchain():
 
 def printParticipants():
     print('*'*20)
+
     for tx in participants:
         print(tx, " :")
 
@@ -91,6 +99,14 @@ def verify_transaction(transaction):
         return True
     return False
 
+def saveData():
+    with open('blockchain.txt' , mode='wb') as f:
+        data={
+            'chain':blockchain,
+            'trnxs':transaction,
+            'users':participants
+        }
+        f.write(pickle.dumps(data))
 
 
 def verify():
@@ -104,6 +120,20 @@ def verify():
 
         hash = hash_block(blockchain[i])
     return True
+
+
+def load_data():
+    with open('blockchain.txt',mode="rb") as f:
+        file_content = pickle.loads(f.read())
+        global blockchain
+        global transaction
+        global participants
+        blockchain = file_content['chain']
+        transaction  = file_content['trnxs']
+        participants = file_content['users']
+
+
+
 
 # def hash_block(block):
 #     hash = hashlib.sha256(json.dumps(block,sort_keys=True).encode())
@@ -119,15 +149,18 @@ def mine_block():
     #     'amount':MiningReward
     # }
     proof = proof_of_work()
-    createNew = OrderedDict([('sender','mining'),('recipient',sender),('amount',MiningReward)])
+    createNew = OrderedDict([("sender","mining"),("recipient",sender),("amount",MiningReward)])
+    global transaction
     transaction.append(createNew)
     block= {
-        'previous_hash':hash,
-        'index':len(blockchain),
-        'transactions':transaction,
-        'proof':proof
+        "previous_hash":hash,
+        "index":len(blockchain),
+        "transactions":transaction,
+        "proof":proof
     }
+    transaction = []
     blockchain.append(block)
+    saveData()
 
 def get_sendAmount(participant):
     tx_send = [ [ tx['amount'] for tx in block['transactions'] if tx['sender']==participant] for block in blockchain ] 
@@ -162,10 +195,14 @@ def proof_of_work():
         proof+=1
     return proof
 
+
+
+
 # main function 
 
 loop =True
 while(loop):
+    load_data()
     print("1 : add element\n2: print chain\n3:Output Participants\nm: Mine transactions \nq: exit")
     a= input()
     if a=='1':
@@ -196,4 +233,4 @@ while(loop):
         loop=False
     
 else:
-    print("Usser left")
+    print('{}  left the transactions'.format(sender))
