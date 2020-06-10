@@ -7,18 +7,25 @@ from collections import OrderedDict
 from hash_util import hash_string_256, hash_block
 # from files import saveData
 import pickle
+from block  import Block
+from transaction import Transaction
+
+
+
 #globals
 
 decoder  =json.JSONDecoder(object_pairs_hook=OrderedDict)
 
 
 MiningReward = 10
-first ={
-    "previous_hash":"first",
-    "index":0,
-    'transactions':[],
-    "proof":2608
-}
+# first ={
+#     "previous_hash":"first",
+#     "index":0,
+#     'transactions':[],
+#     "proof":2608
+# }
+
+first = Block(0,"first",[],2608,0)
 blockchain = [first]
 transaction = []
 sender = "AtulPandey"
@@ -76,7 +83,7 @@ def get_user():
 
 def printchain():
     for i in blockchain:
-        print(i)
+        print(i.__dict__)
 
 def printParticipants():
     print('*'*20)
@@ -112,9 +119,9 @@ def saveData():
 def verify():
     hash = hash_block(blockchain[0])
     for i in range(1,len(blockchain)):
-        if(hash!=blockchain[i]['previous_hash']):
+        if(hash!=blockchain[i].previous_hash):
             return False
-        if not valid_proof(blockchain[i]['transactions'][:-1],blockchain[i]['previous_hash'],blockchain[i]['proof']):
+        if not valid_proof((blockchain[i].transactions)[:-1],blockchain[i].previous_hash,blockchain[i].proof):
             print('Proof of work invalid')
             return False
 
@@ -123,14 +130,18 @@ def verify():
 
 
 def load_data():
-    with open('blockchain.txt',mode="rb") as f:
-        file_content = pickle.loads(f.read())
-        global blockchain
-        global transaction
-        global participants
-        blockchain = file_content['chain']
-        transaction  = file_content['trnxs']
-        participants = file_content['users']
+    try:
+        with open('blockchain.txt',mode="rb") as f:
+            file_content = pickle.loads(f.read())
+            global blockchain
+            global transaction
+            global participants
+            blockchain = file_content['chain']
+            transaction  = file_content['trnxs']
+            participants = file_content['users']
+    except  :
+        print("NOT FOUND") 
+
 
 
 
@@ -152,18 +163,19 @@ def mine_block():
     createNew = OrderedDict([("sender","mining"),("recipient",sender),("amount",MiningReward)])
     global transaction
     transaction.append(createNew)
-    block= {
-        "previous_hash":hash,
-        "index":len(blockchain),
-        "transactions":transaction,
-        "proof":proof
-    }
+    # block= {
+    #     "previous_hash":hash,
+    #     "index":len(blockchain),
+    #     "transactions":transaction,
+    #     "proof":proof
+    # }
+    block = Block(len(blockchain),hash,transaction,proof)
     transaction = []
     blockchain.append(block)
     saveData()
 
 def get_sendAmount(participant):
-    tx_send = [ [ tx['amount'] for tx in block['transactions'] if tx['sender']==participant] for block in blockchain ] 
+    tx_send = [ [ tx['amount'] for tx in block.transactions if tx['sender']==participant] for block in blockchain ] 
     amount=0
     for a in tx_send:
 
@@ -171,7 +183,7 @@ def get_sendAmount(participant):
             amount+=sum(a)
     return amount
 def get_recievedAmount(participant):
-    tx_send = [ [ tx['amount'] for tx in block['transactions'] if tx['recipient']==participant] for block in blockchain ] 
+    tx_send = [ [ tx['amount'] for tx in block.transactions if tx['recipient']==participant] for block in blockchain ] 
     amount=0
     for a in tx_send:
         

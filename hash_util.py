@@ -6,5 +6,6 @@ def hash_string_256(string):
     return hashlib.sha256(string).hexdigest()
 
 def hash_block(block):
-    hash = hashlib.sha256(json.dumps(block,sort_keys=True).encode())
+    blocked = block.__dict__.copy()     
+    hash = hashlib.sha256(json.dumps(blocked,sort_keys=True).encode())
     return hash.hexdigest()
